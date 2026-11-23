@@ -1,0 +1,3 @@
+deploy/certbot/conf/
+deploy/certbot/www/
+.env

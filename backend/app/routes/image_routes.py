@@ -1,8 +1,9 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 
 from app.config.settings import settings
 from app.core.exceptions import AppError
+from app.core.rate_limit import rate_limit
 from app.schemas.image_schema import ImageResponse, MessageResponse
 from app.services import image_service, storage_service
 
@@ -12,7 +13,7 @@ media_router = APIRouter(tags=["media"])
 # Plain `def` endpoints run in FastAPI's threadpool, so slow AI work doesn't block other requests.
 
 
-@router.post("/remove-bg", response_model=ImageResponse)
+@router.post("/remove-bg", response_model=ImageResponse, dependencies=[Depends(rate_limit)])
 def remove_bg(file: UploadFile = File(...)):
     # Read one byte past the limit so oversized uploads are rejected without loading them fully.
     data = file.file.read(settings.max_upload_bytes + 1)
@@ -43,4 +44,8 @@ def media(kind: str, filename: str):
     if kind not in MEDIA_KINDS or ext != "png":
         raise AppError(404, "IMAGE_NOT_FOUND", "Image not found")
     path = storage_service.get(MEDIA_KINDS[kind], image_id)
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "private, max-age=3600"})
+    return FileResponse(
+        path,
+        media_type="image/png",
+        headers={"Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff"},
+    )

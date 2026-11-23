@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 from io import BytesIO
 
 os.environ["STORAGE_DIR"] = tempfile.mkdtemp()
@@ -11,6 +12,10 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 import app.main as main_module
+from app.config.settings import settings
+from app.core import rate_limit
+from app.services import storage_service
+from app.tasks.cleanup import delete_expired_files
 from app.main import app
 from app.services import image_service
 
@@ -28,6 +33,7 @@ def fake_remove(image):
 def stub_ai(monkeypatch):
     monkeypatch.setattr(image_service, "remove_background", fake_remove)
     monkeypatch.setattr(main_module, "get_session", lambda: None)  # skip model preload
+    rate_limit.reset()
 
 
 @pytest.fixture
@@ -121,3 +127,31 @@ def test_ai_failure(client, monkeypatch):
 @pytest.mark.parametrize("path", ["/media/processed/..%2F..%2Fapp%2Fmain.png", "/media/processed/abc.png", "/media/secret/x.png"])
 def test_path_traversal_blocked(client, path):
     assert client.get(path).status_code == 404
+
+
+def test_rate_limit(client, monkeypatch):
+    monkeypatch.setattr(settings, "rate_limit_per_minute", 3)
+    codes = [upload(client, make_image("PNG")).status_code for _ in range(4)]
+    assert codes == [200, 200, 200, 429]
+    assert upload(client, make_image("PNG")).json()["error"]["code"] == "RATE_LIMITED"
+    # Other endpoints are not limited.
+    assert client.get("/api/v1/health").status_code == 200
+
+
+def test_cleanup_deletes_only_expired_and_idle_files(client):
+    old, fresh, busy = (upload(client, make_image("PNG")).json()["data"]["image_id"] for _ in range(3))
+    day_ago = time.time() - 2 * 24 * 3600
+    for image_id in (old, busy):
+        for kind in ("originals", "processed"):
+            path = storage_service.file_path(kind, image_id)
+            os.utime(path, (day_ago, day_ago))
+
+    image_service.processing_ids.add(busy)
+    try:
+        assert delete_expired_files() == 2  # original + processed of `old`
+    finally:
+        image_service.processing_ids.discard(busy)
+
+    assert client.get(f"/media/processed/{old}.png").status_code == 404
+    assert client.get(f"/media/processed/{fresh}.png").status_code == 200
+    assert client.get(f"/media/processed/{busy}.png").status_code == 200

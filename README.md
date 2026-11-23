@@ -1,6 +1,6 @@
-# ClearCut — AI Background Remover
+# BgCleaner — AI Background Remover
 
-Next.js frontend + FastAPI/rembg backend. Full spec: [CLAUDE.md](CLAUDE.md).
+Next.js frontend + FastAPI/rembg backend. Full spec: [CLAUDE.md](CLAUDE.md). Deploying: [DEPLOY.md](DEPLOY.md).
 
 ## Run locally
 
@@ -23,4 +23,8 @@ copy .env.example .env.local
 npm run dev
 ```
 
-Tests: `cd backend && .venv\Scripts\python -m pytest`
+## Tests
+```
+cd backend && .venv\Scripts\python -m pytest
+cd frontend && npm test
+```

@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/*
+ * Dark theme tokens. Names are semantic: "ink" = foreground, "paper" = page background,
+ * "surface" = card background, "rule" = hairline border.
+ */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-ink: #fafafa;
+  --color-paper: #000000;
+  --color-surface: #0a0a0c;
+  --color-raised: #141417;
+  --color-muted: #8b8b90;
+  --color-body: #d4d4d4;
+  --color-rule: rgb(255 255 255 / 0.08);
+  --color-rule-strong: rgb(255 255 255 / 0.16);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-body);
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+@utility label {
+  @apply text-xs font-medium text-muted;
+}
+@utility heading {
+  @apply font-semibold tracking-[-0.025em] text-ink;
+}
+/* Second headline line fades from white to grey. */
+@utility fade-text {
+  @apply bg-linear-to-r from-ink via-[#b4b4b8] to-[#6b6b70] bg-clip-text text-transparent;
+}
+@utility card {
+  @apply rounded-2xl border border-rule bg-surface;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-40;
+}
+@utility btn-primary {
+  @apply btn border-ink bg-ink text-paper hover:bg-[#e4e4e7] active:scale-[0.98];
+}
+@utility btn-ghost {
+  @apply btn border-rule-strong bg-raised text-ink hover:border-[#3a3a40] hover:bg-[#1c1c20];
+}
+@utility icon-btn {
+  @apply grid size-9 place-items-center rounded-full border border-rule bg-raised text-ink transition-colors hover:border-rule-strong hover:bg-[#1c1c20] disabled:pointer-events-none disabled:opacity-30;
+}
+@utility icon-tile {
+  @apply grid size-10 place-items-center rounded-xl border border-rule bg-raised text-ink;
+}
+@utility chip {
+  @apply rounded-full border px-3 py-1.5 text-xs font-medium transition-colors;
+}
+@utility chip-on {
+  @apply border-ink bg-ink text-paper;
+}
+@utility chip-off {
+  @apply border-rule bg-raised text-body hover:border-rule-strong hover:text-ink;
+}
+@utility field {
+  @apply rounded-lg border border-rule bg-raised px-2.5 py-1.5 text-ink focus:border-rule-strong focus:outline-none;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}
+
+/* Editor-only transparency indicator. Never baked into exported images. */
+.checkerboard {
+  background-color: #1b1b1e;
+  background-image:
+    linear-gradient(45deg, #26262a 25%, transparent 25%),
+    linear-gradient(-45deg, #26262a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #26262a 75%),
+    linear-gradient(-45deg, transparent 75%, #26262a 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+input[type="range"] {
+  accent-color: var(--color-ink);
+}

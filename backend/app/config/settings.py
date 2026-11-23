@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     rembg_model: str = "isnet-general-use"
     max_concurrent_jobs: int = Field(2, gt=0)
+    rate_limit_per_minute: int = Field(10, gt=0)
+    cleanup_interval_minutes: float = Field(30, gt=0)
 
     @field_validator("cors_origins")
     @classmethod
